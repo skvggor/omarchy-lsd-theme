@@ -47,22 +47,45 @@ else
   fail "lsd fell back to the default theme"
 fi
 
-# 3. Hook is a no-op when the generated theme is missing
+# Set up a fake home mirroring the installed layout: colors.yaml is a
+# symlink to the generated theme inside the omarchy state directory.
 FAKE_HOME="$WORK_DIR/fake-home"
-mkdir -p "$FAKE_HOME"
-if HOME="$FAKE_HOME" "$SCRIPT_DIR/theme-set"; then
-  pass "hook exits 0 when theme state is missing"
+FAKE_STATE="$FAKE_HOME/.local/state/omarchy/current/theme"
+FAKE_LSD="$FAKE_HOME/.config/lsd"
+mkdir -p "$FAKE_STATE" "$FAKE_LSD"
+cat > "$FAKE_LSD/config.yaml" <<EOF
+color:
+  when: always
+  theme: custom
+EOF
+cp "$WORK_DIR/colors.yaml" "$FAKE_STATE/lsd.yaml"
+ln -s "$FAKE_STATE/lsd.yaml" "$FAKE_LSD/colors.yaml"
+
+# 3. Live update: changing the state file alone (as a theme set swap does)
+#    must change what the next lsd invocation renders — no copy step.
+printf 'user: "#ff0000"\n' > "$FAKE_STATE/lsd.yaml"
+OUTPUT=$(HOME="$FAKE_HOME" lsd -l --color always "$WORK_DIR/colors.yaml" 2>&1) || fail "lsd exited nonzero (red)"
+if printf '%s' "$OUTPUT" | grep -q '38;2;255;0;0'; then
+  pass "symlinked colors.yaml reflects state file changes live"
 else
-  fail "hook failed when theme state is missing"
+  fail "lsd did not pick up the updated state file"
 fi
 
-# 4. Hook copies the generated theme into place
-mkdir -p "$FAKE_HOME/.local/state/omarchy/current/theme" "$FAKE_HOME/.config/lsd"
-cp "$WORK_DIR/colors.yaml" "$FAKE_HOME/.local/state/omarchy/current/theme/lsd.yaml"
-if HOME="$FAKE_HOME" "$SCRIPT_DIR/theme-set" && cmp -s "$WORK_DIR/colors.yaml" "$FAKE_HOME/.config/lsd/colors.yaml"; then
-  pass "hook copies generated theme to ~/.config/lsd/colors.yaml"
+printf 'user: "#00ff00"\n' > "$FAKE_STATE/lsd.yaml"
+OUTPUT=$(HOME="$FAKE_HOME" lsd -l --color always "$WORK_DIR/colors.yaml" 2>&1) || fail "lsd exited nonzero (green)"
+if printf '%s' "$OUTPUT" | grep -q '38;2;0;255;0'; then
+  pass "next invocation picks up the newest theme without any hook"
 else
-  fail "hook did not copy the generated theme"
+  fail "lsd did not pick up the second state file change"
+fi
+
+# 4. Edge: during the theme swap the target is briefly missing — lsd must
+#    degrade gracefully (exit 0) instead of erroring.
+rm "$FAKE_STATE/lsd.yaml"
+if HOME="$FAKE_HOME" lsd -1 --color always "$WORK_DIR/colors.yaml" >/dev/null 2>&1; then
+  pass "lsd exits 0 while the theme target is momentarily missing"
+else
+  fail "lsd errored on a dangling colors.yaml symlink"
 fi
 
 exit "$FAILED"
