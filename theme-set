@@ -1,0 +1,11 @@
+#!/bin/bash
+
+GENERATED_THEME="$HOME/.local/state/omarchy/current/theme/lsd.yaml"
+LSD_COLORS_FILE="$HOME/.config/lsd/colors.yaml"
+
+if [[ ! -f "$GENERATED_THEME" ]]; then
+  exit 0
+fi
+
+mkdir -p "$(dirname "$LSD_COLORS_FILE")"
+cp "$GENERATED_THEME" "$LSD_COLORS_FILE"

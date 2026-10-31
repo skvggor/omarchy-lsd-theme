@@ -1,0 +1,38 @@
+user: "{{ accent }}"
+group: "{{ muted }}"
+permission:
+  read: "{{ green }}"
+  write: "{{ yellow }}"
+  exec: "{{ red }}"
+  exec-sticky: "{{ magenta }}"
+  no-access: "{{ muted }}"
+  octal: "{{ muted }}"
+  acl: "{{ cyan }}"
+  context: "{{ cyan }}"
+date:
+  hour-old: "{{ green }}"
+  day-old: "{{ yellow }}"
+  older: "{{ muted }}"
+size:
+  none: "{{ muted }}"
+  small: "{{ green }}"
+  medium: "{{ yellow }}"
+  large: "{{ red }}"
+inode:
+  valid: "{{ cyan }}"
+  invalid: "{{ muted }}"
+links:
+  valid: "{{ cyan }}"
+  invalid: "{{ muted }}"
+tree-edge: "{{ muted }}"
+git-status:
+  default: "{{ muted }}"
+  unmodified: "{{ muted }}"
+  ignored: "{{ muted }}"
+  new-in-index: "{{ green }}"
+  new-in-workdir: "{{ green }}"
+  typechange: "{{ yellow }}"
+  deleted: "{{ red }}"
+  renamed: "{{ green }}"
+  modified: "{{ yellow }}"
+  conflicted: "{{ red }}"
